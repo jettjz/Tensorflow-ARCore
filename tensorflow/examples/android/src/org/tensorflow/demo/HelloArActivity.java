@@ -16,6 +16,7 @@
 
 package org.tensorflow.demo;
 
+import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -64,6 +65,7 @@ import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationExceptio
 import org.tensorflow.demo.env.ImageUtils;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -391,6 +393,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
             Frame frame = session.update();
             Camera camera = frame.getCamera();
 
+
             // Handle taps. Handling only one tap per frame, as taps are usually low frequency
             // compared to frame rate.
 
@@ -454,6 +457,17 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
             pointCloudRenderer.update(pointCloud);
             pointCloudRenderer.draw(viewmtx, projmtx);
 
+            //PrintStream ps = new PrintStream("some_output_file.txt");
+//            for(int i = 0; i < pointCloud.getPoints().capacity(); i++)
+//            {
+//                // put each float on one line
+//                // use printf to get fancy (decimal places, etc)
+//                //ps.println(pointCloud.getPoints().get(i));
+//                Log.i("point", String.valueOf(pointCloud.getPoints().get(i)));
+//            }
+            Log.i("point capacity", String.valueOf(pointCloud.getPoints().capacity()));
+
+            //ps.close();
 
             // Application is responsible for releasing the point cloud resources after
             // using it.
@@ -480,6 +494,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
                 if (bestMatch != null && !detectingObjects) {
                     ArrayList<Vector3f> points = getPointCloudCoordinates(frame, 0.5f);
                     Log.d(TAG, "" + bestMatchCenter[0] + ", " + bestMatchCenter[1]);
+                    
                     if (points.size() > 0) {
                         Pose closestPose = null;
                         double smallestSqrDistance = Double.MAX_VALUE;
@@ -557,7 +572,11 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
             textureReader.releaseFrame(gpuDownloadFrameBufferIndex);
             if (!detectingObjects) {
                 detectingObjects = true;
-                Bitmap bm = Bitmap.createBitmap(IMAGE_WIDTH, IMAGE_HEIGHT, Bitmap.Config.ARGB_8888, true);
+                // hasAlpha boolean not available in api 24
+                //Bitmap bm = Bitmap.createBitmap(IMAGE_WIDTH, IMAGE_HEIGHT, Bitmap.Config.ARGB_8888, true);
+                Bitmap bm = Bitmap.createBitmap(IMAGE_WIDTH, IMAGE_HEIGHT, Bitmap.Config.ARGB_8888);
+                bm.setHasAlpha(true);
+                //
                 bm.copyPixelsFromBuffer(processedImageBytesGrayscale);
                 final Bitmap resizedBM = Bitmap.createBitmap(YOLO_INPUT_SIZE, YOLO_INPUT_SIZE, Bitmap.Config.ARGB_8888);
 //            Bitmap resizedBM = Bitmap.createScaledBitmap(bm, YOLO_INPUT_SIZE, YOLO_INPUT_SIZE, false);
@@ -568,9 +587,21 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
                     public void run() {
                         List<Classifier.Recognition> results = detector.recognizeImage(resizedBM);
 
-                        String lookingForObject = "laptop";
+                        /*
+                         *
+                         * Look here for changing recognition
+                         *
+                         *
+                         */
+                        String lookingForObject = "chair";
+                        Classifier.Recognition max = results.get(0);
                         for (final Classifier.Recognition result : results) {
+                            if (result.getConfidence() > max.getConfidence()) {
+                                max = result;
+                            }
+                            //Log.i("Score", result.getTitle() + result.getConfidence());
                             if (result.getTitle().equals(lookingForObject) && result.getConfidence() > 0.5f) {
+                                Log.i("Detected", "Detected " + lookingForObject);
                                 RectF loc = result.getLocation();
                                 float[] center = new float[]{loc.centerX(), loc.centerY()};
                                 cropToScreenTransform.mapRect(loc);
@@ -583,6 +614,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
                                 }
                             }
                         }
+                        Log.i("highest confidence", max.getTitle() + " " + max.getConfidence());
                         detectingObjects = false;
                     }
                 });

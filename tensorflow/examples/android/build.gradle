@@ -82,7 +82,6 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 27
     buildToolsVersion '27.0.3'
-
     if (nativeBuildSystem == 'cmake') {
         defaultConfig {
             applicationId = 'org.tensorflow.demo'
@@ -103,11 +102,9 @@ android {
             }
         }
     }
-
     lintOptions {
         abortOnError false
     }
-
     sourceSets {
         main {
             if (nativeBuildSystem == 'bazel' || nativeBuildSystem == 'makefile') {
@@ -144,6 +141,11 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    defaultConfig {
+        minSdkVersion 24
+    }
+    productFlavors {
     }
 }
 
@@ -209,13 +211,11 @@ dependencies {
     }
     // ARCore library
     implementation 'com.google.ar:core:1.2.0'
-
     // Obj - a simple Wavefront OBJ file loader
     // https://github.com/javagl/Obj
     implementation 'de.javagl:obj:0.2.1'
-
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support:design:27.1.1'
     implementation 'javax.vecmath:vecmath:1.5.2'
-//    implementation 'org.tensorflow:tensorflow-lite:0.1.2-nightly'
+    //    implementation 'org.tensorflow:tensorflow-lite:0.1.2-nightly'
 }
